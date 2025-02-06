@@ -4,11 +4,27 @@
 import pyatomdb
 import numpy as np
 from parameters import *
+from pylatex import (
+    Alignat,
+    Axis,
+    Document,
+    Figure,
+    Math,
+    Matrix,
+    Plot,
+    Section,
+    Subsection,
+    Tabular,
+    TikZ,
+)
+
 
 #pick the file to be scanned
-file = "zlines_30.par"
+file = "line search/searchFiles/zlines_30.par"
 if file == "":
     file = input("What file should I do? \n")
+
+createPDF = True
 
 #check the parameters file for the method
 parL= getParameterList(file)
@@ -69,26 +85,58 @@ elementsD = {
     116: "Lv", 117: "Ts", 118: "Og"
 }
 
+#setting up the information for the latex document
+if createPDF:
+    geometry_opt= {"tmargin": "1cm", "lmargin": "1cm"}
+    doc = Document(geometry_options=geometry_opt)
+
+
 temperature = 1
 linesL=[]
 #loops through all of the different lines in the dictionary
 for keys,items in parTGD.items():
     #resets the tolerance value
-    tolerance = 0.02
+    tolerance = 0.01
     #sorts the lines into classes for ease of access 
     lineC = emissionLine(keys, items)
     #keep searching for lines until there are at least 2 line candidates
     while len(lineC.elements) <= 2:
         lineC.elements = session.return_linelist(temperature, [lineC.lambdaA-tolerance, lineC.lambdaA+tolerance])
         tolerance += 0.01
-    
     #Sort the possible lines by emissivity
     lineC.elements.sort(order="Epsilon")
+    lineC.elements = lineC.elements[::-1]
 
     linesL.append(lineC)
 
     print(lineC.elements)
    # print(f"index: {c.index}, energy: {c.energy}, wavelegth: {c.lambdaA}, elements: {c.elements}")
+
+#so now I need to turn this whole thing into a latex document
+# which means:
+# printing the header what line is this refeering to and what its measured values were
+# Printing out all of the possible lines or some selection of them
+
+#this is a horrible nested mess but I don't fully understand how this laTeX library works tbh
+
+with doc.create(Section(file)):
+    for Line in linesL:
+        with doc.create(Subsection(Line.index)):
+            doc.append(f"Energy: {Line.energy}, Sigma: {Line.sigma}, Lambda: {Line.lambdaA}")
+            with doc.create(Tabular("l l l l")) as tablE:
+                tablE.add_row(["Element:Ion |Up to Low", "Lambda", "Emissivity", "Redshift"])
+                tablE.add_hline()
+                count = 0
+                for pL in Line.elements:
+                    if count > 6:
+                        break
+                    tablE.add_row([f"{elementsD[pL[-4]]}:{pL[-3]} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], Line.lambdaA-pL[0]])
+                    count += 1
+                tablE.add_hline()
+
+doc.generate_pdf("line search/latexFiles/zlines30", clean_tex=False)
+
+
 
 
 
