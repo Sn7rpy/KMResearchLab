@@ -24,6 +24,7 @@ file = "line search/searchFiles/zlines_30.par"
 if file == "":
     file = input("What file should I do? \n")
 
+#flag for the code to create the LaTeX pdf or not
 createPDF = True
 
 #check the parameters file for the method
@@ -55,7 +56,7 @@ for m in parCL:
         m.name = nameM[1]
         parTGD[nameM[0]]=[m]
 
-
+#setting up atomdb 
 session = pyatomdb.spectrum.CIESession()
 
 elementsD = {
@@ -99,42 +100,49 @@ for keys,items in parTGD.items():
     tolerance = 0.01
     #sorts the lines into classes for ease of access 
     lineC = emissionLine(keys, items)
-    #keep searching for lines until there are at least 2 line candidates
+    #keep searching for lines until there are at least 3 line candidates
     while len(lineC.elements) <= 2:
+        #add the list of possible emission lines to the line's parameters
         lineC.elements = session.return_linelist(temperature, [lineC.lambdaA-tolerance, lineC.lambdaA+tolerance])
         tolerance += 0.01
+
     #Sort the possible lines by emissivity
     lineC.elements.sort(order="Epsilon")
     lineC.elements = lineC.elements[::-1]
 
+    #add the line class to a list of them so that they can be easily parsed
     linesL.append(lineC)
 
     print(lineC.elements)
    # print(f"index: {c.index}, energy: {c.energy}, wavelegth: {c.lambdaA}, elements: {c.elements}")
 
-#so now I need to turn this whole thing into a latex document
-# which means:
-# printing the header what line is this refeering to and what its measured values were
-# Printing out all of the possible lines or some selection of them
 
 #this is a horrible nested mess but I don't fully understand how this laTeX library works tbh
-
-with doc.create(Section(file)):
-    for Line in linesL:
-        with doc.create(Subsection(Line.index)):
-            doc.append(f"Energy: {Line.energy}, Sigma: {Line.sigma}, Lambda: {Line.lambdaA}")
-            with doc.create(Tabular("l l l l")) as tablE:
-                tablE.add_row(["Element:Ion |Up to Low", "Lambda", "Emissivity", "Redshift"])
-                tablE.add_hline()
-                count = 0
-                for pL in Line.elements:
-                    if count > 6:
-                        break
-                    tablE.add_row([f"{elementsD[pL[-4]]}:{pL[-3]} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], Line.lambdaA-pL[0]])
-                    count += 1
-                tablE.add_hline()
-
-doc.generate_pdf("line search/latexFiles/zlines30", clean_tex=False)
+#I can probably put this inside the previous loop for the sake of efficiency but sacrificing the readability of the code
+if createPDF:
+    #Lable the section with the filename
+    with doc.create(Section(file)):
+        #loop over the list of line classes created in the last section of the code
+        for Line in linesL:
+            #Create a subsection for the particular line being evaluated
+            with doc.create(Subsection(Line.index)):
+                #label the subsection with information about the possible line
+                doc.append(f"Energy: {Line.energy}, Sigma: {Line.sigma}, Lambda: {Line.lambdaA}")
+                #initiate the table that will contain the possible likes 
+                with doc.create(Tabular("l l l l")) as tablE:
+                    #header and line underneeth for neatness 
+                    tablE.add_row(["Element:Ion |Up to Low", "Lambda", "Emissivity", "Redshift"])
+                    tablE.add_hline()
+                    #resetting the counter so that only 6 possible lines are listed
+                    count = 0
+                    for pL in Line.elements:
+                        if count > 6:
+                            break
+                        tablE.add_row([f"{elementsD[pL[-4]]}:{pL[-3]} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], Line.lambdaA-pL[0]])
+                        count += 1
+                    tablE.add_hline()
+    #self explanatory
+    doc.generate_pdf("line search/latexFiles/zlines30", clean_tex=False)
 
 
 
