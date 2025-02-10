@@ -7,10 +7,16 @@ from parameters import *
 
 
 
-#pick the file to be scanned
+#pick the file to be scanned and the name of the output file
 file = "line search/searchFiles/zlines_30.par"
+output = "line search/latexFiles/zlines30"
 if file == "":
     file = input("What file should I do? \n")
+
+#declaring the default values for the atomdb queary
+initialTolerance = 0.01
+toleranceStep = 0.01
+temperature = 1
 
 #flag for the code to create the LaTeX pdf or not
 #WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
@@ -57,7 +63,9 @@ for m in parCL:
     #split the name of the parameter into the line index and the parameter
     nameM= m.name.split(".")
 
+    #remove the (1) from the name
     nameM[0]=nameM[0][:-3]
+
     #check if the line index is already in the dictionary
     if nameM[0] in parTGD.keys():
         m.name = nameM[1]
@@ -102,19 +110,19 @@ if createPDF:
     doc = Document(geometry_options=geometry_opt)
 
 
-temperature = 1
+
 linesL=[]
 #loops through all of the different lines in the dictionary
 for keys,items in parTGD.items():
     #resets the tolerance value
-    tolerance = 0.01
+    tolerance = initialTolerance
     #sorts the lines into classes for ease of access 
     lineC = emissionLine(keys, items)
     #keep searching for lines until there are at least 3 line candidates
     while len(lineC.elements) <= 2:
         #add the list of possible emission lines to the line's parameters
         lineC.elements = session.return_linelist(temperature, [lineC.lambdaA-tolerance, lineC.lambdaA+tolerance])
-        tolerance += 0.01
+        tolerance += toleranceStep
 
     #Sort the possible lines by emissivity (increasing)
     lineC.elements.sort(order="Epsilon")
@@ -164,7 +172,7 @@ if createPDF:
                         count += 1
                     tablE.add_hline()
     #self explanatory
-    doc.generate_pdf("line search/latexFiles/zlines30", clean_tex=False)
+    doc.generate_pdf(output, clean_tex=False)
 
 #next i need to loop over the possible lines to check if their redshifts are similar
 #idea: plot all of the possible lines in a number line/ plane (if emissivity should also be taken into account)
