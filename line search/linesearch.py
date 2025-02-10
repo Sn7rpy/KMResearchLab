@@ -4,7 +4,23 @@
 import pyatomdb
 import numpy as np
 from parameters import *
-from pylatex import (
+
+
+
+#pick the file to be scanned
+file = "line search/searchFiles/zlines_30.par"
+if file == "":
+    file = input("What file should I do? \n")
+
+#flag for the code to create the LaTeX pdf or not
+#WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
+createPDF = True
+
+#flag to do the plot of redshifts
+shiftSearch = True
+
+if createPDF:
+    from pylatex import (
     Alignat,
     Axis,
     Document,
@@ -16,17 +32,9 @@ from pylatex import (
     Subsection,
     Tabular,
     TikZ,
-)
-
-
-#pick the file to be scanned
-file = "line search/searchFiles/zlines_30.par"
-if file == "":
-    file = input("What file should I do? \n")
-
-#flag for the code to create the LaTeX pdf or not
-#WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
-createPDF = True
+    )
+if shiftSearch:
+    import matplotlib.pyplot as plt
 
 #check the parameters.py file for the how this method works
 parL= getParameterList(file)
@@ -49,6 +57,7 @@ for m in parCL:
     #split the name of the parameter into the line index and the parameter
     nameM= m.name.split(".")
 
+    nameM[0]=nameM[0][:-3]
     #check if the line index is already in the dictionary
     if nameM[0] in parTGD.keys():
         m.name = nameM[1]
@@ -115,9 +124,13 @@ for keys,items in parTGD.items():
     #add the line class to a list of them so that they can be easily parsed
     linesL.append(lineC)
 
-    print(lineC.elements)
-   # print(f"index: {c.index}, energy: {c.energy}, wavelegth: {c.lambdaA}, elements: {c.elements}")
+    #print(lineC.elements)
+    print(f"index: {lineC.index}, energy: {lineC.energy}, wavelegth: {lineC.lambdaA}, elements: {lineC.elements}")
 
+
+#setting up the plotting for the redshifts
+if shiftSearch:
+    plt.figure(figsize=(50, 5))
 
 #this is a horrible nested mess but I don't fully understand how this laTeX library works tbh
 #I can probably put this inside the previous loop for the sake of efficiency but sacrificing the readability of the code
@@ -138,16 +151,24 @@ if createPDF:
                     #resetting the counter so that only 6 possible lines are listed
                     count = 0
                     for pL in Line.elements:
+                        redshift = Line.lambdaA-pL[0]
                         if count > 6:
                             break
-                        tablE.add_row([f"{elementsD[pL[-4]]}:{pL[-3]} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], Line.lambdaA-pL[0]])
+
+                        if shiftSearch and count<1:
+                            plt.plot(redshift,(np.log10(pL[2])+19), ".")
+                            plt.text(redshift, (np.log10(pL[2])+19)+0.1, f"{Line.index}")
+                            pass
+
+                        tablE.add_row([f"{elementsD[pL[-4]]}:{pL[-3]} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], redshift])
                         count += 1
                     tablE.add_hline()
     #self explanatory
     doc.generate_pdf("line search/latexFiles/zlines30", clean_tex=False)
 
 #next i need to loop over the possible lines to check if their redshifts are similar
+#idea: plot all of the possible lines in a number line/ plane (if emissivity should also be taken into account)
+if shiftSearch:
+    plt.show()
 
-
-
-print('hello')
+print('everything ran fine')
