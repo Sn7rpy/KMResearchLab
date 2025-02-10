@@ -25,9 +25,10 @@ if file == "":
     file = input("What file should I do? \n")
 
 #flag for the code to create the LaTeX pdf or not
+#WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
 createPDF = True
 
-#check the parameters file for the method
+#check the parameters.py file for the how this method works
 parL= getParameterList(file)
 
 #Break down the parameters from the file into a class so that the parameters are more easily acessible
@@ -106,8 +107,9 @@ for keys,items in parTGD.items():
         lineC.elements = session.return_linelist(temperature, [lineC.lambdaA-tolerance, lineC.lambdaA+tolerance])
         tolerance += 0.01
 
-    #Sort the possible lines by emissivity
+    #Sort the possible lines by emissivity (increasing)
     lineC.elements.sort(order="Epsilon")
+    #reverse the order so the strongest line is first
     lineC.elements = lineC.elements[::-1]
 
     #add the line class to a list of them so that they can be easily parsed
@@ -144,7 +146,7 @@ if createPDF:
     #self explanatory
     doc.generate_pdf("line search/latexFiles/zlines30", clean_tex=False)
 
-
+#next i need to loop over the possible lines to check if their redshifts are similar
 
 
 
