@@ -17,6 +17,7 @@ if file == "":
 initialTolerance = 0.01
 toleranceStep = 0.01
 temperature = 1
+temperatureStep = 1
 
 #flag for the code to create the LaTeX pdf or not
 #WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
@@ -168,14 +169,16 @@ if createPDF:
                             plt.text(redshift, (np.log10(pL[2])+19)+0.1, f"{Line.index}")
                             pass
 
-                        tablE.add_row([f"{elementsD[pL[-4]]}:{pL[-3]} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], redshift])
+                        tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], redshift])
                         count += 1
                     tablE.add_hline()
     #self explanatory
     doc.generate_pdf(output, clean_tex=False)
 
-#next i need to loop over the possible lines to check if their redshifts are similar
-#idea: plot all of the possible lines in a number line/ plane (if emissivity should also be taken into account)
+#todo:
+#figure out how to add the shift search plot to the latex document
+#add the option to search by temperature
+
 if shiftSearch:
     plt.show()
 

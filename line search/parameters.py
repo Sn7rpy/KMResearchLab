@@ -74,3 +74,21 @@ class emissionLine:
         self.index = inx
         
         self.elements = []
+
+
+def convertRoman(number = int):
+    roman = {1000:"M", 900:"CM", 500:"D", 400:"CD", 100:"C", 90:"XC", 50:"L", 40:"XL", 10:"X", 9:"IX", 5:"V", 4:"IV",1:"I"}
+    ogNum= number
+    output=""
+    if number <0:
+        print("negative number input into convertRoman() method")
+        return("0")
+    for i,j in roman.items():
+        while number >= i:
+            output += j
+            number -=i
+    
+    if number == 0:
+        return(output)
+    else:
+        print(f"Something went wrong with converting {ogNum} into {output}")
