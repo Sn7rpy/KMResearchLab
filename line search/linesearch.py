@@ -3,6 +3,7 @@
 
 import pyatomdb
 import numpy as np
+import os
 from parameters import *
 
 
@@ -12,6 +13,10 @@ file = "line search/searchFiles/zlines_30.par"
 output = "line search/latexFiles/zlines30"
 if file == "":
     file = input("What file should I do? \n")
+
+
+#Set the maximum amount of lines that will be shown in the final table
+possibleLines = 6
 
 #declaring the default values for the atomdb queary
 initialTolerance = 0.01
@@ -25,6 +30,8 @@ createPDF = True
 
 #flag to do the plot of redshifts
 shiftSearch = True
+#filename for the plot of the redshifts
+shiftPlot= latexFig = os.path.join(os.path.dirname(__file__), "plot.png")
 
 if createPDF:
     from pylatex import (
@@ -139,7 +146,7 @@ for keys,items in parTGD.items():
 
 #setting up the plotting for the redshifts
 if shiftSearch:
-    plt.figure(figsize=(50, 5))
+    plt.figure(figsize=(20, 5))
 
 #this is a horrible nested mess but I don't fully understand how this laTeX library works tbh
 #I can probably put this inside the previous loop for the sake of efficiency but sacrificing the readability of the code
@@ -160,8 +167,9 @@ if createPDF:
                     #resetting the counter so that only 6 possible lines are listed
                     count = 0
                     for pL in Line.elements:
+                        #calculate the redshift for the given line
                         redshift = Line.lambdaA-pL[0]
-                        if count > 6:
+                        if count > possibleLines:
                             break
 
                         if shiftSearch and count<1:
@@ -172,14 +180,20 @@ if createPDF:
                         tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], redshift])
                         count += 1
                     tablE.add_hline()
+        if shiftSearch:
+            plt.savefig(shiftPlot)
+            with doc.create(Figure(position="h!")) as spFig:
+                spFig.add_image(shiftPlot)
+                spFig.add_caption("Plot of the redshifts of the most likely lines")
+            pass
     #self explanatory
     doc.generate_pdf(output, clean_tex=False)
 
 #todo:
-#figure out how to add the shift search plot to the latex document
-#add the option to search by temperature
+#add the option to search by temperature variation
 
 if shiftSearch:
-    plt.show()
+    #plt.show()
+    pass
 
 print('everything ran fine')

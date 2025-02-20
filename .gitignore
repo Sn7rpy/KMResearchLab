@@ -1,4 +1,5 @@
 /.DS_Store
 /line search/latexFiles
 /line search/searchFiles
-/line search/test/py
+/line search/test.py
+/line search/plot.png
