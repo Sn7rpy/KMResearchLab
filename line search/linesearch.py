@@ -6,7 +6,8 @@ import numpy as np
 import os
 from parameters import *
 
-
+#flag to trigger the gui or not
+gui= True
 
 #pick the file to be scanned and the name of the output file
 file = "line search/searchFiles/zlines_30.par"
@@ -49,6 +50,11 @@ if createPDF:
     )
 if shiftSearch:
     import matplotlib.pyplot as plt
+
+if gui:
+    from tkinter import *
+    from tkinter.ttk import *
+    pass
 
 #check the parameters.py file for the how this method works
 parL= getParameterList(file)
@@ -181,6 +187,8 @@ if createPDF:
                         count += 1
                     tablE.add_hline()
         if shiftSearch:
+            plt.ylabel("Emissivity (log10(keV)+19)")
+            plt.xlabel("Redshift")
             plt.savefig(shiftPlot)
             with doc.create(Figure(position="h!")) as spFig:
                 spFig.add_image(shiftPlot)
@@ -191,7 +199,9 @@ if createPDF:
 
 #todo:
 #add the option to search by temperature variation
+#make gui
 
+#debigging the plots
 if shiftSearch:
     #plt.show()
     pass
