@@ -6,8 +6,10 @@ import numpy as np
 import os
 from parameters import *
 
+pyatomdb.util.switch_version('3.1.3')
+
 #flag to trigger the gui or not
-gui= True
+gui= False
 
 #pick the file to be scanned and the name of the output file
 file = "line search/searchFiles/zlines_30.par"
