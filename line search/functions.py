@@ -1,3 +1,5 @@
+import json 
+
 def getUnits(fileName):
     par = open(fileName)
     raw_list = par.read().split('\n')
@@ -92,3 +94,31 @@ def convertRoman(number = int):
         return(output)
     else:
         print(f"Something went wrong with converting {ogNum} into {output}")
+
+def eVtoA(eV):
+    return 12398/float(eV)
+
+def dataEntryDict(outputDict = {}, outputFile = None, convertFunc=None, addMore=True):
+    if addMore:
+        key = input("key name: ")
+        item = input ("item name: ")
+        while key != "done":
+            if convertFunc ==None:
+                outputDict[key] = float(item)
+            else:
+                outputDict[key] = convertFunc(item)
+            key = input("key name (or type\"done\" to end): ")
+            item = input ("item name: ")
+    
+    if outputFile != None:
+        with open(outputFile, "w") as file:
+            json.dump(outputDict, file)
+        print(f"written {outputDict} to {outputFile}")
+
+siFile = "line search/siLines.json"
+sFile = "line search/sLines.json"
+def siLines():
+    return json.load(siFile)
+
+def sLines():
+    return json.load(sFile)

@@ -4,7 +4,7 @@
 import pyatomdb
 import numpy as np
 import os
-from parameters import *
+from functions import *
 
 pyatomdb.util.switch_version('3.1.3')
 
@@ -62,14 +62,13 @@ if gui:
 parL= getParameterList(file)
 
 #Break down the parameters from the file into a class so that the parameters are more easily acessible
+#sort the parameters into a dictionary together
 parCL =[]
-for n in parL:
-    parCL.append(parameterFrame(n))
-
-#grouping all of the parameters of one line into the same dictionary entry
 parTGD =dict()
-for m in parCL:
-    
+for n in parL:
+    m = parameterFrame(n)
+    parCL.append(m)
+
     #ignore any of the parameters that don't refeer to lines
     if m.name.startswith("ga"):
         pass
