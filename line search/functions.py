@@ -1,4 +1,7 @@
 import json 
+from astropy.io import fits
+import numpy as np
+import os
 
 def getUnits(fileName):
     par = open(fileName)
@@ -115,10 +118,17 @@ def dataEntryDict(outputDict = {}, outputFile = None, convertFunc=None, addMore=
             json.dump(outputDict, file)
         print(f"written {outputDict} to {outputFile}")
 
-siFile = "line search/siLines.json"
-sFile = "line search/sLines.json"
+
 def siLines():
-    return json.load(siFile)
+    return json.load(os.path.join(os.path.dirname(__file__)),"dictionaries","siLines.json")
 
 def sLines():
-    return json.load(sFile)
+    return json.load(os.path.join(os.path.dirname(__file__)),"dictionaries","sLines.json")
+
+def list_lines():
+    apecFitsFile = os.path.join(os.environ["ATOMDB"], "apec_line.fits")
+
+    with fits.open(apecFitsFile) as aFF:
+        lines_data = aFF[1].data
+
+    return

@@ -2,8 +2,8 @@ import json
 import os
 from functions import *
 
-siFile = "line search/siLines.json"
-sFile = "line search/sLines.json"
+siFile = "line search/dictionaries/siLines.json"
+sFile = "line search/dictionaries/sLines.json"
 
 
 siDict = {
@@ -19,8 +19,6 @@ siDict = {
     "Ne-like Si V": [1765.18],
     "Na–Si-like Si I–IV": [1740.04]
 }
-
-
 
 sDict = {
     "Li-like S XIV": [2450.0, 2447.02, 2437.797, 2414.7],

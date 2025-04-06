@@ -5,6 +5,8 @@ import pyatomdb
 import numpy as np
 import os
 from functions import *
+import json
+import os
 
 pyatomdb.util.switch_version('3.1.3')
 
@@ -12,10 +14,11 @@ pyatomdb.util.switch_version('3.1.3')
 gui= False
 
 #pick the file to be scanned and the name of the output file
-file = "line search/searchFiles/zlines_30.par"
-output = "line search/latexFiles/zlines30"
-if file == "":
-    file = input("What file should I do? \n")
+fileI = "zlines_30.par"
+outputI = fileI[:-4]
+
+file = os.path.join(os.path.dirname(__file__),"searchFiles", fileI)
+output = os.path.join(os.path.dirname(__file__), "latexFiles", outputI)
 
 
 #Set the maximum amount of lines that will be shown in the final table
@@ -50,6 +53,7 @@ if createPDF:
     Tabular,
     TikZ,
     )
+
 if shiftSearch:
     import matplotlib.pyplot as plt
 
@@ -58,36 +62,43 @@ if gui:
     from tkinter.ttk import *
     pass
 
-#check the parameters.py file for the how this method works
-parL= getParameterList(file)
+dictFile = os.path.join(os.path.dirname(__file__), "dictionaries", outputI+".json")
 
-#Break down the parameters from the file into a class so that the parameters are more easily acessible
-#sort the parameters into a dictionary together
-parCL =[]
-parTGD =dict()
-for n in parL:
-    m = parameterFrame(n)
-    parCL.append(m)
+if os.path.exists(dictFile):
+    parTGD = json.load(dictFile)
+else:
 
-    #ignore any of the parameters that don't refeer to lines
-    if m.name.startswith("ga"):
-        pass
-    else:
-        continue
+    #check the parameters.py file for the how this method works
+    parL= getParameterList(file)
 
-    #split the name of the parameter into the line index and the parameter
-    nameM= m.name.split(".")
+    #Break down the parameters from the file into a class so that the parameters are more easily acessible
+    #sort the parameters into a dictionary together
+    parCL =[]
+    parTGD =dict()
+    for n in parL:
+        m = parameterFrame(n)
+        parCL.append(m)
 
-    #remove the (1) from the name
-    nameM[0]=nameM[0][:-3]
+        #ignore any of the parameters that don't refeer to lines
+        if m.name.startswith("ga"):
+            pass
+        else:
+            continue
 
-    #check if the line index is already in the dictionary
-    if nameM[0] in parTGD.keys():
-        m.name = nameM[1]
-        parTGD[nameM[0]].append(m)
-    else:
-        m.name = nameM[1]
-        parTGD[nameM[0]]=[m]
+        #split the name of the parameter into the line index and the parameter
+        nameM= m.name.split(".")
+
+        #remove the (1) from the name
+        nameM[0]=nameM[0][:-3]
+
+        #check if the line index is already in the dictionary
+        if nameM[0] in parTGD.keys():
+            m.name = nameM[1]
+            parTGD[nameM[0]].append(m)
+        else:
+            m.name = nameM[1]
+            parTGD[nameM[0]]=[m]
+
 
 #setting up atomdb 
 session = pyatomdb.spectrum.CIESession()
