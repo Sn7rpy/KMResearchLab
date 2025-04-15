@@ -78,7 +78,8 @@ class emissionLine:
 
         self.index = inx
         
-        self.elements = []
+        self.elementsPlus = []
+        self.elementsADB = []
 
 
 def convertRoman(number = int):
@@ -120,15 +121,38 @@ def dataEntryDict(outputDict = {}, outputFile = None, convertFunc=None, addMore=
 
 
 def siLines():
-    return json.load(os.path.join(os.path.dirname(__file__)),"dictionaries","siLines.json")
+    path = os.path.join(os.path.dirname(__file__),"dictionaries","siLines.json")
+    with open(path, "r") as file:
+        return json.load(file)
 
 def sLines():
-    return json.load(os.path.join(os.path.dirname(__file__)),"dictionaries","sLines.json")
+    path = os.path.join(os.path.dirname(__file__),"dictionaries","sLines.json")
+    with open(path, "r") as file:
+        return json.load(file)
 
-def list_lines():
+def list_lines(wavelength, tolerance = 0.3, minEm= 1e-18):
     apecFitsFile = os.path.join(os.environ["ATOMDB"], "apec_line.fits")
 
     with fits.open(apecFitsFile) as aFF:
-        lines_data = aFF[1].data
+        data = aFF[2].data
+        mask = (data["Lambda"] < wavelength+tolerance) & (data["Lambda"] > wavelength-tolerance)
+        tableT = data[mask]
 
-    return
+        for n in range(3,203):
+            data = aFF[n].data
+            mask = (data["Lambda"] < wavelength+tolerance) & (data["Lambda"] > wavelength-tolerance)
+            tableT = np.concatenate([tableT,data[mask]])
+        
+        mask = tableT["Epsilon"] > minEm
+        tableT = tableT[mask]
+        tableT.sort(order="Epsilon")
+        tableT = tableT[::-1]
+
+        _, idx = np.unique(tableT[['Element', 'Ion', 'UpperLev', 'LowerLev']], return_index=True)
+        uniqueTable = tableT[idx]
+
+        uniqueTable.sort(order="Epsilon")
+        uniqueTable = uniqueTable[::-1]
+
+
+    return uniqueTable
