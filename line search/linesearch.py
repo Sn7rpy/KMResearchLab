@@ -189,9 +189,9 @@ if createPDF:
                         if count > possibleLines:
                             break
 
-                        if shiftSearch and count<1:
+                        if shiftSearch and count<3:
                             plt.plot(redshift,(np.log10(pL[2])+19), ".")
-                            plt.text(redshift, (np.log10(pL[2])+19)+0.1, f"{Line.index}")
+                            plt.text(redshift-0.005, (np.log10(pL[2])+19)-0.1, f"{Line.index}({count})", fontsize=6)
                             pass
 
                         tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], redshift])
@@ -202,7 +202,10 @@ if createPDF:
         if shiftSearch:
             plt.ylabel("Emissivity (log10(keV)+19)")
             plt.xlabel("Redshift")
-            plt.title("Redshifts of Most likely line")
+            plt.title("Redshifts of Highest Emissivity Lines")
+            for i in np.linspace(-0.3,0.3,24):
+                plt.axvspan(i, i+0.0125, color="gray", alpha=0.2)
+
             plt.savefig(shiftPlot)
             with doc.create(Figure(position="h!")) as spFig:
                 spFig.add_image(shiftPlot)
