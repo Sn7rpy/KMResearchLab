@@ -24,11 +24,21 @@ createPDF = True
 
 #flag to do the plot of redshifts
 shiftSearch = True
+
+relativeEmissivity = True
+relEmCutoff = 0.5
+
 filesToConvert = ["zlines_20_29_subplex.par","zlines_20_29_powell.par","zlines_33_43_powell.par","zlines_30_cash.par","zlines_30_cashII.par","zlines_30.par","zlines_33_43_subplex.par" ]
+#filesToConvert = ["zlines_30.par"]
+
+
 for fileName in filesToConvert:
     #pick the file to be scanned and the name of the output file
     fileI = fileName
-    outputI = fileI[:-4]
+    if relativeEmissivity:
+        outputI = fileI[:-4]+'_rel'
+    else:
+        outputI = fileI[:-4]
 
     file = os.path.join(os.path.dirname(__file__),"searchFiles", fileI)
     output = os.path.join(os.path.dirname(__file__), "latexFiles", outputI)
@@ -183,11 +193,11 @@ for fileName in filesToConvert:
                 with doc.create(Subsection(Line.index)):
                     #label the subsection with information about the possible line
                     if True:
-                        doc.append(f"Energy: {round(mAtokeV(Line.energy),7)}, ")
-                        doc.append(f"Sigma: {round(mAtokeV(Line.sigma),7)}, ") 
+                        doc.append(f"Equivalent Width: {round(eqwSigmatokeV(Line.energy,Line.lambdaA),7)}, ")
+                        doc.append(f"Sigma: {round(eqwSigmatokeV(Line.sigma,Line.lambdaA),7)}, ") 
                         doc.append(f"Lambda: {round(AtokeV(Line.lambdaA),7)} \n")
 
-                        if mAtokeV(Line.sigma) >0.1:
+                        if eqwSigmatokeV(Line.sigma,Line.lambdaA) >0.1:
                             print(f"{fileI}, {Line.index} has a width that's too high")
                     else:
                         doc.append(f"Energy: {Line.energy}, Sigma: {Line.sigma}, Lambda: {Line.lambdaA}")
@@ -201,15 +211,28 @@ for fileName in filesToConvert:
                         for pL in Line.elementsADB:
                             #calculate the redshift for the given line
                             redshift = Line.lambdaA/pL[0]-1
-                            if count > possibleLines:
-                                break
 
-                            if shiftSearch and count<3:
-                                plt.plot(redshift,(np.log10(pL[2])+19), ".")
-                                plt.text(redshift-0.005, (np.log10(pL[2])+19)-0.1, f"{Line.index}({count})", fontsize=6)
+                            if relativeEmissivity:
+                                emissivity = pL[2]/Line.elementsADB[0][2]
+                                if emissivity < relEmCutoff:
+                                    break
+                                if shiftSearch:
+                                    plt.plot(redshift,(emissivity), ".")
+                                    plt.text(redshift-0.005, (emissivity)-0.001, f"{Line.index}({count})", fontsize=6)
+                                    pass
                                 pass
+                            else:
+                                emissivity = pL[2]
+                                if count > possibleLines:
+                                    break
+                                if shiftSearch and count<3:
+                                    plt.plot(redshift,(np.log10(emissivity)+19), ".")
+                                    plt.text(redshift-0.005, (np.log10(emissivity)+19)-0.1, f"{Line.index}({count})", fontsize=6)
+                                    pass
 
-                            tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", AtokeV(pL[0]), pL[2], redshift])
+                            
+
+                            tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", AtokeV(pL[0]), emissivity, redshift])
                             count += 1
                         tablE.add_hline()
                         if len(Line.elementsPlus)>0:
@@ -228,7 +251,10 @@ for fileName in filesToConvert:
                     
 
             if shiftSearch:
-                plt.ylabel("Emissivity (log10(keV)+19)")
+                if relativeEmissivity:
+                    plt.ylabel("Relative Emissivity")
+                else:
+                    plt.ylabel("Emissivity (log10(keV)+19)")
                 plt.xlabel("Redshift")
                 plt.title("Redshifts of Highest Emissivity Lines")
                 for i in np.linspace(-maxShift,maxShift,24):

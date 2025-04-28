@@ -106,8 +106,13 @@ def AtokeV(A):
     return eVtoA(A)/1000
 
 def mAtokeV(mA):
-    A=mA*1000
-    return 12.398*A/(A**2)
+    A=mA*1e-3
+    return 12.398/(A)
+
+def eqwSigmatokeV(mA,lamb):
+    A=mA*1e-3
+    return (12.398*A)/(lamb**2)
+
 
 def dataEntryDict(outputDict = {}, outputFile = None, convertFunc=None, addMore=True):
     if addMore:
