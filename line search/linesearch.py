@@ -12,6 +12,18 @@ import os
 
 #flag to trigger the gui or not
 gui= False
+#Set the maximum amount of lines that will be shown in the final table
+possibleLines = 6
+
+#declaring the default values for the atomdb queary
+maxShift = 0.3/2
+
+#flag for the code to create the LaTeX pdf or not
+#WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
+createPDF = True
+
+#flag to do the plot of redshifts
+shiftSearch = True
 
 #pick the file to be scanned and the name of the output file
 fileI = "zlines_30.par"
@@ -21,21 +33,7 @@ file = os.path.join(os.path.dirname(__file__),"searchFiles", fileI)
 output = os.path.join(os.path.dirname(__file__), "latexFiles", outputI)
 
 
-#Set the maximum amount of lines that will be shown in the final table
-possibleLines = 6
 
-#declaring the default values for the atomdb queary
-initialTolerance = 0.01
-toleranceStep = 0.01
-temperature = 1
-temperatureStep = 1
-
-#flag for the code to create the LaTeX pdf or not
-#WILL THROW OUT ERRORS IF YOU DON'T HAVE PACKAGES TO RENDER LATEX DOCUMENTS (MacTeX for Macs, MikTeX for Windows)
-createPDF = True
-
-#flag to do the plot of redshifts
-shiftSearch = True
 #filename for the plot of the redshifts
 shiftPlot= latexFig = os.path.join(os.path.dirname(__file__), "plot.png")
 
@@ -136,17 +134,26 @@ if createPDF:
 
 
 linesL=[]
+
+#Create a dictionary with all of the lines that aren't in AtomDB
+newLinesDict = siLines() | sLines()
+
 #loops through all of the different lines in the dictionary
 for keys,items in parTGD.items():
     #resets the tolerance value
-    tolerance = initialTolerance
+    tol = maxShift
     #sorts the lines into classes for ease of access 
     lineC = emissionLine(keys, items)
     
     #using my own method to find all of the possible lines within some range of wavelegths (0.3A which is the upper limit for the fastest observed disk winds)
-    lineC.elementsADB = list_lines(lineC.lambdaA)
+    lineC.elementsADB = list_lines(lineC.lambdaA,tol)
     if len(lineC.elementsADB) < 6:
-        lineC.elementsADB = list_lines(lineC.lambdaA,0.3,1e-19)
+        lineC.elementsADB = list_lines(lineC.lambdaA,tol,1e-19)
+    
+    for key,item in newLinesDict.items():
+        if abs(AtokeV(lineC.lambdaA)/item-1)<tol:
+            lineC.elementsPlus.append([key,item])
+    
 
 
     #add the line class to a list of them so that they can be easily parsed
@@ -161,7 +168,6 @@ if shiftSearch:
     plt.figure(figsize=(20, 5))
 
 #creating the dictionaries that search for the lines that aren't in atomdb
-newLinesDict = siLines() | sLines()
 
 #setting up the data structure for the new lines
 
@@ -169,23 +175,28 @@ newLinesDict = siLines() | sLines()
 #I can probably put this inside the previous loop for the sake of efficiency but sacrificing the readability of the code
 if createPDF:
     #Lable the section with the filename
-    with doc.create(Section(file)):
+    with doc.create(Section(fileI)):
         #loop over the list of line classes created in the last section of the code
         for Line in linesL:
             #Create a subsection for the particular line being evaluated
             with doc.create(Subsection(Line.index)):
                 #label the subsection with information about the possible line
-                doc.append(f"Energy: {Line.energy}, Sigma: {Line.sigma}, Lambda: {Line.lambdaA}")
+                if True:
+                    doc.append(f"Energy: {round(mAtokeV(Line.energy),7)}, ")
+                    doc.append(f"Sigma: {round(mAtokeV(Line.sigma),7)}, ") 
+                    doc.append(f"Lambda: {round(AtokeV(Line.lambdaA),7)} \n")
+                else:
+                    doc.append(f"Energy: {Line.energy}, Sigma: {Line.sigma}, Lambda: {Line.lambdaA}")
                 #initiate the table that will contain the possible likes 
                 with doc.create(Tabular("l l l l")) as tablE:
                     #header and line underneeth for neatness 
-                    tablE.add_row(["Element:Ion |Up to Low", "Lambda", "Emissivity", "Redshift"])
+                    tablE.add_row(["Element:Ion |U to L", "Lambda", "Emissivity", "Redshift"])
                     tablE.add_hline()
                     #resetting the counter so that only 6 possible lines are listed
                     count = 0
                     for pL in Line.elementsADB:
                         #calculate the redshift for the given line
-                        redshift = Line.lambdaA-pL[0]
+                        redshift = Line.lambdaA/pL[0]-1
                         if count > possibleLines:
                             break
 
@@ -194,17 +205,31 @@ if createPDF:
                             plt.text(redshift-0.005, (np.log10(pL[2])+19)-0.1, f"{Line.index}({count})", fontsize=6)
                             pass
 
-                        tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", pL[0], pL[2], redshift])
+                        tablE.add_row([f"{elementsD[pL[-4]]}:{convertRoman(pL[-3])} |{pL[-2]} to {pL[-1]}", AtokeV(pL[0]), pL[2], redshift])
                         count += 1
                     tablE.add_hline()
+                    if len(Line.elementsPlus)>0:
+                        tablE.add_row(["Element Ion", "Lambda", "Emissivity", "Redshift"])
+                        for tuple in Line.elementsPlus:
+                            redshift = AtokeV(Line.lambdaA)/tuple[1]-1
+                            
+                            if shiftSearch and False:
+                                plt.plot(redshift,5, ".")
+                                plt.text(redshift-0.005, 5-0.1, f"{tuple[0]}", fontsize=6)
+                                pass
+
+                            tablE.add_row([tuple[0],tuple[1],"-",redshift])
+
+                            pass
                 
 
         if shiftSearch:
             plt.ylabel("Emissivity (log10(keV)+19)")
             plt.xlabel("Redshift")
             plt.title("Redshifts of Highest Emissivity Lines")
-            for i in np.linspace(-0.3,0.3,24):
-                plt.axvspan(i, i+0.0125, color="gray", alpha=0.2)
+            for i in np.linspace(-maxShift,maxShift,24):
+                interval = maxShift/24
+                plt.axvspan(i, i+interval, color="gray", alpha=0.2)
 
             plt.savefig(shiftPlot)
             with doc.create(Figure(position="h!")) as spFig:
@@ -215,7 +240,6 @@ if createPDF:
     doc.generate_pdf(output, clean_tex=False)
 
 #todo:
-#add the option to search by temperature variation
 #make gui
 
 #debigging the plots

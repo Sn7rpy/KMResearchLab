@@ -102,6 +102,13 @@ def convertRoman(number = int):
 def eVtoA(eV):
     return 12398/float(eV)
 
+def AtokeV(A):
+    return eVtoA(A)/1000
+
+def mAtokeV(mA):
+    A=mA*1000
+    return 12.398*A/(A**2)
+
 def dataEntryDict(outputDict = {}, outputFile = None, convertFunc=None, addMore=True):
     if addMore:
         key = input("key name: ")
@@ -135,12 +142,12 @@ def list_lines(wavelength, tolerance = 0.3, minEm= 1e-18):
 
     with fits.open(apecFitsFile) as aFF:
         data = aFF[2].data
-        mask = (data["Lambda"] < wavelength+tolerance) & (data["Lambda"] > wavelength-tolerance)
+        mask = (data["Lambda"] > wavelength/(tolerance+1)) & (data["Lambda"] < wavelength/(1-tolerance))
         tableT = data[mask]
 
         for n in range(3,203):
             data = aFF[n].data
-            mask = (data["Lambda"] < wavelength+tolerance) & (data["Lambda"] > wavelength-tolerance)
+            mask = (data["Lambda"] > wavelength/(tolerance+1)) & (data["Lambda"] < wavelength/(1-tolerance))
             tableT = np.concatenate([tableT,data[mask]])
         
         mask = tableT["Epsilon"] > minEm
@@ -156,3 +163,4 @@ def list_lines(wavelength, tolerance = 0.3, minEm= 1e-18):
 
 
     return uniqueTable
+
